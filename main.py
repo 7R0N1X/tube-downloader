@@ -1,5 +1,6 @@
 import os
 from pytube import Playlist
+from pytube.exceptions import AgeRestrictedError
 from moviepy.editor import VideoFileClip
 
 
@@ -30,32 +31,35 @@ def download_mp3(url):
 
     pl = Playlist(url)
     for video in pl.videos:
-        print(f'Descargando: {video.title}')
-        # Filtrar los streams disponibles por resolución, ordenarlos por calidad descendente
-        streams = video.streams.filter(
-            progressive=True).order_by('resolution').desc()
-        # Obtener el primer stream igual o inferior a 480p
-        target_stream = next(
-            (s for s in streams if int(s.resolution[:-1]) <= 480), None)
-        # Si se encuentra un stream compatible, descargarlo
-        if target_stream:
-            # Guardar el video en el directorio "downloads"
-            video_path = target_stream.download(output_path='downloads/')
-            # Limpiar el nombre del archivo
-            cleaned_title = clean_filename(video.title)
-            # Ruta completa al archivo de audio
-            audio_path = os.path.join('downloads', f"{cleaned_title}.mp3")
-            # Convertir el video a audio MP3 con una calidad de 320 kbps
-            video_clip = VideoFileClip(video_path)
-            try:
-                video_clip.audio.write_audiofile(audio_path, bitrate='320k')
-            except Exception as e:
-                print(f"Error al convertir el video a MP3: {e}")
-            finally:
-                # Cerrar el clip de video
-                video_clip.close()
-                # Eliminar el archivo de video descargado
-                os.remove(video_path)
+        try:
+            print(f'Descargando: {video.title}')
+            # Filtrar los streams disponibles por resolución, ordenarlos por calidad descendente
+            streams = video.streams.filter(
+                progressive=True).order_by('resolution').desc()
+            # Obtener el primer stream igual o inferior a 720
+            target_stream = next(
+                (s for s in streams if int(s.resolution[:-1]) <= 720), None)
+            # Si se encuentra un stream compatible, descargarlo
+            if target_stream:
+                # Guardar el video en el directorio "downloads"
+                video_path = target_stream.download(output_path='downloads/')
+                # Limpiar el nombre del archivo
+                cleaned_title = clean_filename(video.title)
+                # Ruta completa al archivo de audio
+                audio_path = os.path.join('downloads', f"{cleaned_title}.mp3")
+                # Convertir el video a audio MP3 con una calidad de 320 kbps
+                video_clip = VideoFileClip(video_path)
+                try:
+                    video_clip.audio.write_audiofile(audio_path, bitrate='320k')
+                except Exception as e:
+                    print(f"Error al convertir el video a MP3: {e}")
+                finally:
+                    # Cerrar el clip de video
+                    video_clip.close()
+                    # Eliminar el archivo de video descargado
+                    os.remove(video_path)
+        except AgeRestrictedError:
+            print(f'El video "{video.title}" está restringido por edad y no puede ser descargado.')
 
 
 if __name__ == "__main__":
