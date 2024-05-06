@@ -1,6 +1,6 @@
 import os
 from pytube import Playlist
-from pytube.exceptions import AgeRestrictedError
+from pytube.exceptions import AgeRestrictedError, RegexMatchError
 from moviepy.editor import VideoFileClip
 
 
@@ -60,6 +60,9 @@ def download_mp3(url):
                     os.remove(video_path)
         except AgeRestrictedError:
             print(f'El video "{video.title}" está restringido por edad y no puede ser descargado.')
+        except RegexMatchError as e:
+            print(f'Error al obtener la firma del video "{video.title}": {e}')
+            continue
 
 
 if __name__ == "__main__":
